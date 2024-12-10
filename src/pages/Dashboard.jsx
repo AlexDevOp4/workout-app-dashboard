@@ -40,6 +40,7 @@ function classNames(...classes) {
 }
 
 export default function Dashboard() {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function Dashboard() {
   const handleLogout = async () => {
     // Logout logic here
     try {
-      const response = await axios.post("http://localhost:3000/auth/signout");
+      const response = await axios.post(`${apiUrl}/signout`);
 
       if (response.data) {
         console.log("Logged out successfully:", response.data);

@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function SignUp() {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,7 +11,7 @@ export default function SignUp() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3000/auth/signup", {
+      const response = await axios.post(`${apiUrl}/signup`, {
         email,
         password,
       });
@@ -122,7 +123,7 @@ export default function SignUp() {
           </form>
 
           <p className="mt-10 text-center text-sm/6 text-gray-400">
-           Have an account?{" "}
+            Have an account?{" "}
             <a
               href="#"
               className="font-semibold text-indigo-400 hover:text-indigo-300"

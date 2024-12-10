@@ -4,13 +4,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 export default function SignIn() {
   const { login } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3000/auth/signin", {
+      const response = await axios.post(`${apiUrl}/signin`, {
         email,
         password,
       });
