@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useAuth } from "../AuthContext";
+import { useUserContext } from "../UserContext";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 export default function SignIn() {
+  const { setUser } = useUserContext();
   const { login } = useAuth();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const userApiUrl = import.meta.env.VITE_USERS_API_URL;
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,9 +19,20 @@ export default function SignIn() {
         password,
       });
 
+      const firebaseUID = response.data.uid;
+      console.log(firebaseUID);
+
+      // Step 2: Fetch user data using Firebase UID
+      const userResponse = await axios.get(
+        `${userApiUrl}/firebase?firebaseUID=${firebaseUID}`
+      );
+
+      console.log("User Data:", userResponse.data);
+
       // Check the API response
-      if (response.status === 200 && response.data) {
+      if (response.status && response.data) {
         console.log("Logged in successfully:", response.data);
+        setUser(userResponse.data); // Set user data
         login(); // Call your login handler
         navigate("/dashboard"); // Redirect to dashboard
       }
@@ -112,12 +126,12 @@ export default function SignIn() {
 
           <p className="mt-10 text-center text-sm/6 text-gray-400">
             Not a member?{" "}
-            <a
-              href="#"
+            <Link
+              to={"/signup"}
               className="font-semibold text-indigo-400 hover:text-indigo-300"
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
