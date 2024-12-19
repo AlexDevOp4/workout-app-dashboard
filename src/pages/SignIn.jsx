@@ -20,14 +20,11 @@ export default function SignIn() {
       });
 
       const firebaseUID = response.data.uid;
-      console.log(firebaseUID);
 
       // Step 2: Fetch user data using Firebase UID
       const userResponse = await axios.get(
         `${userApiUrl}/firebase?firebaseUID=${firebaseUID}`
       );
-
-      console.log("User Data:", userResponse.data);
 
       // Check the API response
       if (response.status && response.data) {

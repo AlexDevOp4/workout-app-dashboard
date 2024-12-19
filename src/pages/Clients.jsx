@@ -1,26 +1,45 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { useUserContext } from "../UserContext";
-import NewClientForm from "../components/NewClientForm";
-export default function Clients() {
-  const { user } = useUserContext();
-  const userApiUrl = import.meta.env.VITE_USERS_API_URL;
-  const [clients, setClients] = useState([]);
-  const [currentUser, setCurrentUser] = useState([user]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [trigger, setTrigger] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [userss, setUserss] = useState([]);
+import NewClientForm from "../components/EditClientForm";
+import { TrashIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 
-  const activateChildEffect = (e) => {
-    setCurrentUser(e);
-    setTrigger((prev) => !prev); // Toggle the value to trigger the effect in the child
+
+export default function Clients() {
+  const userApiUrl = import.meta.env.VITE_USERS_API_URL;
+  const authApiUrl = import.meta.env.VITE_API_URL;
+
+  const [clients, setClients] = useState([]);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const fetchClients = useCallback(async () => {
+    try {
+      const response = await axios.get(`${userApiUrl}/`);
+      setClients(response.data);
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }, [userApiUrl]);
+
+  const handleDelete = async (id, firebaseUID) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+    try {
+      await axios.delete(`${userApiUrl}/${id}`);
+      await axios.delete(`${authApiUrl}/delete-user/${firebaseUID}`);
+      fetchClients();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleChange = (users) => {
-    console.log(users);
     setSelectedUser(users); // Set the selected user
     setModalVisible(true);
   };
@@ -30,50 +49,14 @@ export default function Clients() {
     setSelectedUser(null); // Clear the selected user
   };
 
-  const handleUserUpdate = (updatedUser) => {
-    const fetchClients = async () => {
-      try {
-        const response = await axios.get(`${userApiUrl}/`);
-        console.log(response.data);
-        console.log(currentUser);
-        setClients(response.data);
-        setLoading(false);
-      } catch (error) {
-        setError(error);
-        setLoading(false);
-      }
-    };
+  const handleUserUpdate = () => {
     fetchClients();
     handleModalClose(); // Close the modal after updating
   };
 
-  const openModal = () => setModalVisible(true);
-  const closeModal = () => setModalVisible(false);
-
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const response = await axios.get(`${userApiUrl}/`);
-        console.log(response.data);
-        console.log(currentUser);
-        setClients(response.data);
-        setLoading(false);
-      } catch (error) {
-        setError(error);
-        setLoading(false);
-      }
-    };
     fetchClients();
-  }, []);
-
-  const editClient = async (id) => {
-    try {
-      const response = await axios.get(`${userApiUrl}/${id}`);
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error:", error.message);
-    }
-  };
+  }, [fetchClients]);
 
   return (
     <div className="container mx-auto pt-24">
@@ -145,9 +128,18 @@ export default function Clients() {
                             <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                               <button
                                 onClick={() => handleChange(person)}
-                                className="text-indigo-400 hover:text-indigo-300"
+                                className="text-indigo-400"
                               >
-                                Edit
+                                <PencilSquareIcon className="h-5 w-5" />
+                                <span className="sr-only">, {person.name}</span>
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDelete(person._id, person.firebaseUID)
+                                }
+                                className="text-red-500  pl-4"
+                              >
+                                <TrashIcon className="h-5 w-5" />
                                 <span className="sr-only">, {person.name}</span>
                               </button>
                             </td>
@@ -163,15 +155,10 @@ export default function Clients() {
         </div>
       </div>
 
-      <button onClick={openModal}>Create New user</button>
-      <button onClick={activateChildEffect}>Activate Child Effect</button>
-
       {isModalVisible && (
         <NewClientForm
-          trigger={trigger}
           isVisible={isModalVisible}
           onClose={handleModalClose}
-          currentUser={currentUser}
           user={selectedUser}
           onSave={handleUserUpdate}
         />

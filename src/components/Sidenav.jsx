@@ -1,9 +1,6 @@
 "use client";
-
-import { useState } from "react";
-import axios from "axios";
 import { useAuth } from "../AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import {  Link } from "react-router-dom";
 import {
   Disclosure,
   DisclosureButton,
@@ -16,7 +13,7 @@ import {
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", current: true },
+  { name: "Dashboard", href: "/dashboard", current: false },
   { name: "Clients", href: "/clients", current: false },
   { name: "Projects", href: "#", current: false },
   { name: "Calendar", href: "#", current: false },

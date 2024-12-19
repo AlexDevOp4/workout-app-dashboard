@@ -20,7 +20,7 @@ export default function SignUp() {
 
       const firebaseUID = response.data[0]?.uid;
       const trainerId = 825800;
-      const role = "client";
+      const role = "Client";
 
       const createUserResponse = await axios.post(
         "http://localhost:3000/users",

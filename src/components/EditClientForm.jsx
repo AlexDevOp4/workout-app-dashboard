@@ -1,44 +1,29 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-export default function NewClientForm({
-  isVisible,
-  onClose,
-  children,
-  currentUser,
-  trigger,
-  user,
-  onSave,
-}) {
+import { PropTypes } from "prop-types";
+
+EditClientForm.propTypes = {
+  isVisible: PropTypes.bool,
+  onClose: PropTypes.func,
+  children: PropTypes.node,
+  user: PropTypes.object,
+  onSave: PropTypes.func,
+};
+
+export default function EditClientForm({ isVisible, onClose, user, onSave }) {
   const userApiUrl = import.meta.env.VITE_USERS_API_URL;
+
   const [first_name, setFirstName] = useState(user.first_name);
   const [last_name, setLastName] = useState(user.last_name);
   const [email, setEmail] = useState(user.email);
   const [role, setRole] = useState(user.role);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      console.log(JSON.stringify(user));
-      console.log("Child effect triggered!" + user);
-      try {
-        console.log("Child effect triggered!" + user);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-    fetchUser();
-  }, [trigger]);
-
-  const fetchRefresh = () => {
-    console.log("first");
-  };
-
   const submitForm = async (e) => {
     e.preventDefault();
     try {
-      console.log(e);
-      const response = await axios.put(`${userApiUrl}/${user.user_id}`, {
+      await axios.put(`${userApiUrl}/${user.user_id}`, {
         first_name: first_name,
         last_name: last_name,
         email: email,
@@ -48,6 +33,7 @@ export default function NewClientForm({
       onSave({ ...user, first_name, last_name, email, role });
     } catch (error) {
       console.error("Error:", error.message);
+      return error;
     }
   };
 
