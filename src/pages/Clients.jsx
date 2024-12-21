@@ -2,11 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import NewClientForm from "../components/EditClientForm";
 import { TrashIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
+import { PropTypes } from "prop-types";
 
+Clients.propTypes = {
+  client: PropTypes.num,
+};
 
-export default function Clients() {
+export default function Clients({ client }) {
   const userApiUrl = import.meta.env.VITE_USERS_API_URL;
   const authApiUrl = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -52,6 +58,10 @@ export default function Clients() {
   const handleUserUpdate = () => {
     fetchClients();
     handleModalClose(); // Close the modal after updating
+  };
+
+  const handleClientClick = (userId) => {
+    navigate(`/clients/${userId}`); // Redirect to the ClientData page
   };
 
   useEffect(() => {
@@ -117,7 +127,13 @@ export default function Clients() {
                         {clients.map((person) => (
                           <tr key={person.email}>
                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                              {person.first_name} {person.last_name}
+                              <button
+                                onClick={() =>
+                                  handleClientClick(person._id)
+                                }
+                              >
+                                {person.first_name} {person.last_name}
+                              </button>
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
                               {person.email}

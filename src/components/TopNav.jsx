@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "../AuthContext";
-import {  Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Disclosure,
   DisclosureButton,
@@ -19,12 +19,11 @@ const navigation = [
   { name: "Calendar", href: "#", current: false },
 ];
 
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Sidenav() {
+export default function TopNav() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const { logout } = useAuth();
 

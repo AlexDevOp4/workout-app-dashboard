@@ -12,9 +12,10 @@ import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
-import Sidenav from "./components/Sidenav";
+import TopNav from "./components/TopNav";
 import Clients from "./pages/Clients";
 import { UserProvider } from "./UserContext";
+import ClientData from "./pages/ClientData";
 
 function App() {
   return (
@@ -32,9 +33,9 @@ function AppLayout() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div  >
-      {/* Render Sidenav only if user is authenticated */}
-      {isAuthenticated && <Sidenav />}
+    <div>
+      {/* Render TopNav only if user is authenticated */}
+      {isAuthenticated && <TopNav />}
 
       {/* Main Content */}
       <div style={{ flex: 1 }}>
@@ -65,6 +66,15 @@ function AppLayout() {
             element={
               <ProtectedRoute>
                 <Clients />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/clients/:id"
+            element={
+              <ProtectedRoute>
+                <ClientData />
               </ProtectedRoute>
             }
           />
