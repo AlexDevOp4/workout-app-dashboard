@@ -16,6 +16,7 @@ import TopNav from "./components/TopNav";
 import Clients from "./pages/Clients";
 import { UserProvider } from "./UserContext";
 import ClientData from "./pages/ClientData";
+import EditWorkouts from "./components/Workouts/EditWorkouts";
 
 function App() {
   return (
@@ -75,6 +76,15 @@ function AppLayout() {
             element={
               <ProtectedRoute>
                 <ClientData />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/clients/workouts/:id"
+            element={
+              <ProtectedRoute>
+                <EditWorkouts />
               </ProtectedRoute>
             }
           />

@@ -3,13 +3,8 @@ import axios from "axios";
 import NewClientForm from "../components/EditClientForm";
 import { TrashIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
-import { PropTypes } from "prop-types";
 
-Clients.propTypes = {
-  client: PropTypes.num,
-};
-
-export default function Clients({ client }) {
+export default function Clients() {
   const userApiUrl = import.meta.env.VITE_USERS_API_URL;
   const authApiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -128,9 +123,7 @@ export default function Clients({ client }) {
                           <tr key={person.email}>
                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
                               <button
-                                onClick={() =>
-                                  handleClientClick(person._id)
-                                }
+                                onClick={() => handleClientClick(person._id)}
                               >
                                 {person.first_name} {person.last_name}
                               </button>

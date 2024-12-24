@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import NewWorkoutForm from "../components/NewWorkoutForm";
 
 export default function ClientData() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [userData, setUserData] = useState([]);
   const [userWorkouts, setUserWorkouts] = useState([]);
@@ -39,9 +40,12 @@ export default function ClientData() {
       );
 
       const completedProgramData = completedPrograms.map((program) => ({
+        id: program._id,
         name: program.programName,
         dateCompleted: getDateString(program.updatedAt),
       }));
+
+      console.log(currentPrograms);
 
       setCurrentUsersProgram(currentPrograms);
       setPastUsersPrograms(completedProgramData);
@@ -86,82 +90,97 @@ export default function ClientData() {
 
       {/* Current Program */}
       <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">Current Program</h2>
-        <div className="p-4 bg-white shadow-md rounded-lg">
-          <h3 className="text-lg font-bold">
-            {currentUsersProgram[0].programName}
-          </h3>
-          <p className="text-sm text-gray-500">
-            Week {currentUsersProgram[0].currentWeek} of{" "}
-            {currentUsersProgram[0].totalWeeks}
-          </p>
-          <button
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            onClick={() => alert("Show full program details")}
-          >
-            View Program Details
-          </button>
-        </div>
+        <h2 className="text-xl font-semibold mb-2 text-white">
+          Current Program
+        </h2>
+        {currentUsersProgram[0] ? (
+          <div className="p-4 bg-white shadow-md rounded-lg">
+            <h3 className="text-lg font-bold">
+              {currentUsersProgram[0] ? currentUsersProgram[0].programName : ""}
+            </h3>
+            <p className="text-sm text-gray-500">
+              Week{" "}
+              {currentUsersProgram ? currentUsersProgram[0].currentWeek : ""} of{" "}
+              {currentUsersProgram ? currentUsersProgram[0].totalWeeks : ""}
+            </p>
+            <button
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              onClick={() =>
+                navigate(`/clients/workouts/${currentUsersProgram[0]._id}`)
+              }
+            >
+              View Program Details
+            </button>
+          </div>
+        ) : (
+          <div className="p-4 bg-white shadow-md rounded-lg">
+            No current program assigned
+          </div>
+        )}
       </section>
 
       {/* Program Details */}
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2 text-white">
-          Program Details
-        </h2>
-        {currentUsersProgram.length > 0
-          ? currentUsersProgram[0].weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="mb-4">
-                <button
-                  className="w-full text-left px-4 py-2 bg-gray-200 rounded-md font-medium hover:bg-gray-300"
-                  onClick={() => toggleWeek(weekIndex)}
-                >
-                  Week {week.weekNumber}
-                </button>
-                {selectedWeek === weekIndex && (
-                  <div className="pl-6 pt-2">
-                    {week.days.map((day, dayIndex) => (
-                      <div key={dayIndex} className="mb-2 text-white">
-                        <h4 className="font-semibold">Day {day.dayNumber}</h4>
-                        <ul className="list-disc pl-5">
-                          {day.exercises.map((exercise, exerciseIndex) => (
-                            <li key={exerciseIndex}>
-                              {exercise.name} ({exercise.sets}x
-                              {exercise.targetReps} @ {exercise.weight} lbs)
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))
-          : null}
-      </section>
+      {currentUsersProgram.length > 0 ? (
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2 text-white">
+            Program Details
+          </h2>
+          {currentUsersProgram[0].weeks.map((week, weekIndex) => (
+            <div key={weekIndex} className="mb-4">
+              <button
+                className="w-full text-left px-4 py-2 bg-gray-200 rounded-md font-medium hover:bg-gray-300"
+                onClick={() => toggleWeek(weekIndex)}
+              >
+                Week {week.weekNumber}
+              </button>
+              {selectedWeek === weekIndex && (
+                <div className="pl-6 pt-2">
+                  {week.days.map((day, dayIndex) => (
+                    <div key={dayIndex} className="mb-2 text-white">
+                      <h4 className="font-semibold">Day {day.dayNumber}</h4>
+                      <ul className="list-disc pl-5">
+                        {day.exercises.map((exercise, exerciseIndex) => (
+                          <li key={exerciseIndex}>
+                            {exercise.name} ({exercise.sets}x
+                            {exercise.targetReps} @ {exercise.weight} lbs)
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       {/* Past Programs */}
       <section>
         <h2 className="text-xl font-semibold mb-2">Past Programs</h2>
-        {pastUsersPrograms.map((program, index) => (
-          <div
-            key={index}
-            className="p-4 mb-4 bg-white shadow-md rounded-lg flex justify-between items-center"
-          >
-            <div>
-              <h3 className="text-lg font-bold">{program.name}</h3>
-              <p className="text-sm text-gray-500">
-                Completed: {program.dateCompleted}
-              </p>
-            </div>
-            <button
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              onClick={() => alert(`Viewing details for ${program.name}`)}
+        {pastUsersPrograms ? (
+          pastUsersPrograms.map((program, index) => (
+            <div
+              key={index}
+              className="p-4 mb-4 bg-white shadow-md rounded-lg flex justify-between items-center"
             >
-              View Details
-            </button>
-          </div>
-        ))}
+              <div>
+                <h3 className="text-lg font-bold">{program.name}</h3>
+                <p className="text-sm text-gray-500">
+                  Completed: {program.dateCompleted}
+                </p>
+              </div>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                onClick={() => navigate(`/clients/workouts/${program.id}`)}
+              >
+                View Details
+              </button>
+            </div>
+          ))
+        ) : (
+          <div>No completed workouts</div>
+        )}
       </section>
 
       <section>
