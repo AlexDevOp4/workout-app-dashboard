@@ -1,37 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
+import PropTypes from "prop-types";
 import { Dialog } from "@headlessui/react";
 
-const NewWorkoutForm = ({ isVisible, onClose, user, onCancel }) => {
-  const userApiUrl = import.meta.env.VITE_USERS_API_URL;
-
-  const [client, setClient] = useState({});
-  const hasFetched = useRef(false);
-  const fetchClients = useCallback(async () => {
-    if (hasFetched.current) return; // Prevent multiple calls
-    hasFetched.current = true; // Mark as fetched
-    console.log("first");
-    try {
-      const response = await axios.get(`${userApiUrl}/${user[0].clientId}`);
-      setClient(response.data);
-    } catch (error) {
-      console.error("Error fetching client data:", error);
-    }
-  }, [user, userApiUrl]);
-
-  useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+const NewWorkoutForm = ({ isVisible, onClose, user }) => {
+  const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
 
   const getDateString = (date) => {
-    console.log(date);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
     const day = String(date.getDate()).padStart(2, "0");
 
     const formattedDate = `${year}-${month}-${day}`;
-    console.log(formattedDate);
-    return formattedDate
+    return formattedDate;
   };
 
   const [formData, setFormData] = useState({
@@ -117,31 +98,6 @@ const NewWorkoutForm = ({ isVisible, onClose, user, onCancel }) => {
     [setFormData]
   );
 
-  const addDay = (weekIndex) => {
-    setFormData((prev) => {
-      const updated = { ...prev };
-      const week = updated.weeks[weekIndex];
-
-      // Check if a day with this dayNumber already exists
-      const nextDayNumber = week.days.length + 1;
-      if (week.days.some((day) => day.dayNumber === nextDayNumber)) return prev;
-
-      week.days.push({
-        dayNumber: nextDayNumber,
-        exercises: [
-          {
-            name: "New Exercise",
-            sets: 1,
-            targetReps: 0,
-            weight: 0,
-            rpe: 0,
-          },
-        ],
-      });
-      return updated;
-    });
-  };
-
   const addExercise = (weekIndex, dayIndex) => {
     updateWorkout((workout) => {
       const day = workout.weeks[weekIndex].days[dayIndex];
@@ -155,32 +111,14 @@ const NewWorkoutForm = ({ isVisible, onClose, user, onCancel }) => {
     });
   };
 
-  const handleInputChange = (
-    weekIndex,
-    dayIndex,
-    exerciseIndex,
-    field,
-    value
-  ) => {
-    updateWorkout((workout) => {
-      const exercise =
-        workout.weeks[weekIndex].days[dayIndex].exercises[exerciseIndex];
-      exercise[field] = value;
-    });
-  };
-
   const handleSubmit = async () => {
-    console.log(formData);
     try {
-      const response = await axios.post(
-        "http://localhost:3000/workouts",
-        formData
-      );
-      console.log("Workout created successfully:", response.data);
+      await axios.post(workoutApi, formData);
+
       alert("Workout created successfully!");
     } catch (error) {
-      console.error("Error creating workout:", error);
-      alert("Failed to create workout.");
+      onclose();
+      alert("Failed to create workout.", error);
     }
   };
 
@@ -349,6 +287,16 @@ const NewWorkoutForm = ({ isVisible, onClose, user, onCancel }) => {
       </div>
     </Dialog>
   );
+};
+NewWorkoutForm.propTypes = {
+  isVisible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  user: PropTypes.arrayOf(
+    PropTypes.shape({
+      clientId: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  onCancel: PropTypes.func,
 };
 
 export default NewWorkoutForm;

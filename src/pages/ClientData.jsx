@@ -5,16 +5,19 @@ import NewWorkoutForm from "../components/NewWorkoutForm";
 
 export default function ClientData() {
   const { id } = useParams();
+  const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
+  const userApiUrl = import.meta.env.VITE_USERS_API_URL;
   const navigate = useNavigate();
 
   const [userData, setUserData] = useState([]);
-  const [userWorkouts, setUserWorkouts] = useState([]);
+  const [client, setClient] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [currentUsersProgram, setCurrentUsersProgram] = useState([]);
   const [pastUsersPrograms, setPastUsersPrograms] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isHidden, setIsHidden] = useState(true);
 
   const toggleWeek = (weekIndex) => {
     setSelectedWeek(selectedWeek === weekIndex ? null : weekIndex);
@@ -27,9 +30,12 @@ export default function ClientData() {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/workouts`, {
+      const response = await axios.get(workoutApi, {
         params: { clientId: id },
       });
+
+      const responseUserData = await axios.get(`${userApiUrl}/${id}`);
+      setClient(responseUserData.data);
 
       const completedPrograms = response.data.filter(
         (program) => program.completed === true
@@ -45,17 +51,15 @@ export default function ClientData() {
         dateCompleted: getDateString(program.updatedAt),
       }));
 
-      console.log(currentPrograms);
-
       setCurrentUsersProgram(currentPrograms);
       setPastUsersPrograms(completedProgramData);
       setUserData(response.data);
       setLoading(false);
     } catch (error) {
-      console.error(error);
       setLoading(false);
+      return console.error(error);
     }
-  }, [id]);
+  }, [id, userApiUrl, workoutApi]);
 
   const handleModalClose = () => {
     setModalVisible(false);
@@ -81,11 +85,12 @@ export default function ClientData() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 text-white">
       {/* Page Header */}
       <header className="mb-6">
-        <h1 className="text-3xl font-bold">Client's Workouts</h1>
-        <p className="text-gray-500">John Doe</p>
+        <h1 className="text-3xl font-bold">
+          {`${client.first_name} ${client.last_name}'s Workouts`}
+        </h1>
       </header>
 
       {/* Current Program */}
@@ -94,14 +99,14 @@ export default function ClientData() {
           Current Program
         </h2>
         {currentUsersProgram[0] ? (
-          <div className="p-4 bg-white shadow-md rounded-lg">
+          <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-700">
             <h3 className="text-lg font-bold">
               {currentUsersProgram[0] ? currentUsersProgram[0].programName : ""}
             </h3>
             <p className="text-sm text-gray-500">
               Week{" "}
               {currentUsersProgram ? currentUsersProgram[0].currentWeek : ""} of{" "}
-              {currentUsersProgram ? currentUsersProgram[0].totalWeeks : ""}
+              {currentUsersProgram ? currentUsersProgram[0].weeks.length : ""}
             </p>
             <button
               className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
@@ -128,7 +133,7 @@ export default function ClientData() {
           {currentUsersProgram[0].weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="mb-4">
               <button
-                className="w-full text-left px-4 py-2 bg-gray-200 rounded-md font-medium hover:bg-gray-300"
+                className="w-full text-left px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-700"
                 onClick={() => toggleWeek(weekIndex)}
               >
                 Week {week.weekNumber}
@@ -162,7 +167,7 @@ export default function ClientData() {
           pastUsersPrograms.map((program, index) => (
             <div
               key={index}
-              className="p-4 mb-4 bg-white shadow-md rounded-lg flex justify-between items-center"
+              className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-700 flex justify-between items-center"
             >
               <div>
                 <h3 className="text-lg font-bold">{program.name}</h3>
@@ -173,6 +178,42 @@ export default function ClientData() {
               <button
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 onClick={() => navigate(`/clients/workouts/${program.id}`)}
+              >
+                View Details
+              </button>
+            </div>
+          ))
+        ) : (
+          <div>No completed workouts</div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold mb-2">
+          {" "}
+          <button onClick={() => setIsHidden(!isHidden)}>
+            View All Programs
+          </button>
+        </h2>
+        {pastUsersPrograms ? (
+          userData.map((program, index) => (
+            <div
+              key={index}
+              className={
+                isHidden
+                  ? "hidden"
+                  : "border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-700 flex justify-between items-center"
+              }
+            >
+              <div>
+                <h3 className="text-lg font-bold">{program.programName}</h3>
+                <p className="text-sm text-gray-500">
+                  Completed: {program.dateCompleted}
+                </p>
+              </div>
+              <button
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                onClick={() => navigate(`/clients/workouts/${program._id}`)}
               >
                 View Details
               </button>

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { EnvelopeIcon, PhoneIcon } from "@heroicons/react/20/solid";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeftCircleIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
+
 const EditWorkouts = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
 
   const [loading, setLoading] = useState(true);
   const [workout, setWorkout] = useState({
@@ -29,56 +32,6 @@ const EditWorkouts = () => {
     ],
   });
 
-  // http://localhost:3000/workouts/675dda62971fa0ac1aeddf11/weeks/1/days/1/exercises/67622c4a805c309c41173a1f
-
-  // /:workoutId/weeks/:weekNumber/days/:dayNumber/exercises/:exerciseId
-
-  const [inputValue, setInputValue] = useState(""); // State for the input field
-  const [savedValue, setSavedValue] = useState(""); // State to save the final value
-  const [exerciseName, setExerciseName] = useState("");
-  const [exerciseSets, setSets] = useState(0);
-  const [exerciseTargetReps, setTargetReps] = useState(0);
-  const [exerciseWeight, setWeight] = useState(0);
-  const [exerciseRpe, setRpe] = useState(0);
-  const [reps, setReps] = useState(0);
-  const [values, setValues] = useState({});
-
-  const handle = (
-    e,
-    workoutId,
-    weekNumber,
-    dayNumber,
-    exerciseId,
-    weight,
-    sets,
-    targetReps,
-    rpe
-  ) => {
-    const { name, value } = e.target;
-    console.log(
-      name,
-      value,
-      workoutId,
-      weekNumber,
-      dayNumber,
-      exerciseId,
-      weight,
-      sets,
-      targetReps,
-      rpe
-    );
-    setValues({
-      ...values,
-      [name]: value,
-    });
-  };
-
-  // Handle saving the input value
-  const saveValue = (value) => {
-    setSavedValue(value);
-    console.log("Saved Value:", value); // Replace this with an API call if needed
-  };
-
   // Handle key down (Enter key detection)
   const handleKeyDown = async (
     event,
@@ -91,8 +44,8 @@ const EditWorkouts = () => {
       try {
         const exercise =
           workout.weeks[weekIndex].days[dayIndex].exercises[exerciseIndex];
-        const response = await axios.put(
-          `http://localhost:3000/workouts/${workoutId}/weeks/${workout.weeks[weekIndex].weekNumber}/days/${workout.weeks[weekIndex].days[dayIndex].dayNumber}/exercises/${exercise._id}`,
+        await axios.put(
+          `${workoutApi}/${workoutId}/weeks/${workout.weeks[weekIndex].weekNumber}/days/${workout.weeks[weekIndex].days[dayIndex].dayNumber}/exercises/${exercise._id}`,
           {
             name: exercise.name,
             weight: exercise.weight,
@@ -101,10 +54,12 @@ const EditWorkouts = () => {
             rpe: exercise.rpe,
           }
         );
-        console.log(response.data);
+
+        alert("Exercise updated successfully!");
+
         fetchWorkouts(); // Refresh the workout data
       } catch (error) {
-        console.error(error);
+        return error;
       }
     }
   };
@@ -119,26 +74,21 @@ const EditWorkouts = () => {
     });
   };
 
-  // Handle blur (Input loses focus)
-  const handleBlur = (event) => {
-    saveValue(event.target.value); // Save the value when input loses focus
-  };
-
-  const fetchWorkouts = async () => {
+  const fetchWorkouts = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/workouts/${id}`);
+      const response = await axios.get(`${workoutApi}/${id}`);
 
       setWorkout(response.data);
       setLoading(false);
     } catch (error) {
-      console.error(error);
       setLoading(false);
+      return error;
     }
-  };
+  }, [workoutApi, id]);
 
   useEffect(() => {
     fetchWorkouts();
-  }, []);
+  }, [fetchWorkouts]);
 
   const updateWorkout = (updater) => {
     setWorkout((prev) => {
@@ -150,49 +100,59 @@ const EditWorkouts = () => {
 
   const addWeek = async (workoutId) => {
     try {
-      const response = await axios.post(
-        `http://localhost:3000/workouts/${workoutId}/add-week`
-      );
-      console.log(response.data);
+      await axios.post(`${workoutApi}/${workoutId}/add-week`);
+
       fetchWorkouts();
     } catch (error) {
-      console.error(error);
+      return error;
     }
   };
 
   const deleteWeek = async (workoutId, weekNumber) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete the week?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
     try {
-      const response = await axios.delete(
-        `http://localhost:3000/workouts/${workoutId}/weeks/${weekNumber}`
-      );
-      console.log(response.data);
+      await axios.delete(`${workoutApi}/${workoutId}/weeks/${weekNumber}`);
+
       fetchWorkouts();
     } catch (error) {
-      console.error(error);
+      return error;
     }
   };
 
   const addDay = async (workoutId, weekNumber) => {
     try {
-      const response = await axios.post(
-        `http://localhost:3000/workouts/${workoutId}/weeks/${weekNumber}/add-day`
+      await axios.post(
+        `${workoutApi}/${workoutId}/weeks/${weekNumber}/add-day`
       );
-      console.log(response.data);
+
       fetchWorkouts();
     } catch (error) {
-      console.error(error);
+      return error;
     }
   };
 
   const deleteDay = async (workoutId, weekNumber, dayNumber) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this the day?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
     try {
-      const response = await axios.delete(
-        `http://localhost:3000/workouts/${workoutId}/weeks/${weekNumber}/days/${dayNumber}`
+      await axios.delete(
+        `${workoutApi}/${workoutId}/weeks/${weekNumber}/days/${dayNumber}`
       );
-      console.log(response.data);
+
       fetchWorkouts();
     } catch (error) {
-      console.error(error);
+      return error;
     }
   };
 
@@ -216,10 +176,17 @@ const EditWorkouts = () => {
   return (
     <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 sm:p-6 text-gray-900 dark:text-gray-100">
-        <h1 className="text-2xl font-bold mb-6">Edit Workout</h1>
+        <div className="flex items-center gap-2  mb-6">
+          <button className="w-8 " onClick={() => navigate(-1)}>
+            <ArrowLeftIcon />
+          </button>
+        </div>
+        <h1 className="text-2xl font-bold text-center mb-6 ">
+          Edit Program: {workout.programName}
+        </h1>
 
         {/* Program Name */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="block text-sm font-medium">Program Name</label>
           <input
             type="text"
@@ -229,9 +196,9 @@ const EditWorkouts = () => {
                 workout.programName = e.target.value;
               })
             }
-            className="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className="mt-1 block w-80 px-4 border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-2xl"
           />
-        </div>
+        </div> */}
 
         {/* Weeks */}
         {workout.weeks.map((week, weekIndex) => (
@@ -239,20 +206,22 @@ const EditWorkouts = () => {
             key={weekIndex}
             className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-700"
           >
-            <div className="flex justify-between items-center">
+            <div className="flex  items-center">
               <h2 className="text-lg font-semibold">Week {week.weekNumber}</h2>
-              <button
-                onClick={() => addDay(id, week.weekNumber)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
-              >
-                + Add Day
-              </button>
-              <button
-                onClick={() => deleteWeek(id, week.weekNumber)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
-              >
-                Delete Week
-              </button>
+              <div className="flex justify-items-end ml-auto gap-4 mb-4">
+                <button
+                  onClick={() => addDay(id, week.weekNumber)}
+                  className=" px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+                >
+                  + Add Day
+                </button>
+                <button
+                  onClick={() => deleteWeek(id, week.weekNumber)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
+                >
+                  Delete Week
+                </button>
+              </div>
             </div>
 
             <ul
@@ -267,7 +236,7 @@ const EditWorkouts = () => {
                 >
                   <div
                     key={dayIndex}
-                    className="mt-4 border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800"
+                    className=" border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800"
                   >
                     <div className="flex justify-between items-center">
                       <h3 className="text-md font-medium">
