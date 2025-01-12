@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+const userApiUrl = import.meta.env.VITE_USERS_API_URL;
 
 export default function SignUp() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -22,21 +23,17 @@ export default function SignUp() {
       const trainerId = 825800;
       const role = "Client";
 
-      const createUserResponse = await axios.post(
-        "http://localhost:3000/users",
-        {
-          first_name: first_name,
-          last_name: last_name,
-          role: role,
-          firebaseUID: firebaseUID,
-          trainerId: trainerId,
-          email: email,
-        }
-      );
+      const createUserResponse = await axios.post(userApiUrl, {
+        first_name: first_name,
+        last_name: last_name,
+        role: role,
+        firebaseUID: firebaseUID,
+        trainerId: trainerId,
+        email: email,
+      });
 
       // Check the API response
       if (response.data && createUserResponse.status) {
-        console.log("Logged in successfully:", response.data);
         alert("Sign up successful. Please sign in to continue.");
         navigate("/signin"); // Redirect to dashboard
       }

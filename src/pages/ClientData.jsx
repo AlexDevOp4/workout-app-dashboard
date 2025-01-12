@@ -18,10 +18,17 @@ export default function ClientData() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isHidden, setIsHidden] = useState(true);
+  const [percentComplete, setPercentComplete] = useState(0);
 
   const toggleWeek = (weekIndex) => {
     setSelectedWeek(selectedWeek === weekIndex ? null : weekIndex);
   };
+
+const calculatePercentCompleted = (currentWeek, totalWeeks) => {
+  const percentCompleted = (currentWeek / totalWeeks) * 100;
+  return percentCompleted;
+};
+
 
   const getDateString = (date) => {
     const options = { year: "numeric", month: "short" };
@@ -29,6 +36,7 @@ export default function ClientData() {
   };
 
   const fetchUserData = useCallback(async () => {
+    console.log("first");
     try {
       const response = await axios.get(workoutApi, {
         params: { clientId: id },
@@ -44,6 +52,24 @@ export default function ClientData() {
       const currentPrograms = response.data.filter(
         (program) => program.completed === false
       );
+
+      const percentCompleted = calculatePercentCompleted(
+        currentPrograms[0].currentWeek,
+        currentPrograms[0].weeks.length,
+      );
+      setPercentComplete(percentCompleted);
+
+      const currentWeekUserIsOn = currentPrograms.map((program) => {
+        const currentWeek = program.weeks.find(
+          (week) => week.weekNumber === program.currentWeek
+        );
+        return {
+          ...program,
+          currentWeek: program.currentWeek,
+          programName: program.programName,
+          weeks: [currentWeek],
+        };
+      });
 
       const completedProgramData = completedPrograms.map((program) => ({
         id: program._id,
@@ -62,6 +88,7 @@ export default function ClientData() {
   }, [id, userApiUrl, workoutApi]);
 
   const handleModalClose = () => {
+    fetchUserData();
     setModalVisible(false);
     setSelectedUser(null); // Clear the selected user
   };
@@ -103,10 +130,32 @@ export default function ClientData() {
             <h3 className="text-lg font-bold">
               {currentUsersProgram[0] ? currentUsersProgram[0].programName : ""}
             </h3>
+
+            <div>
+              <h4 className="sr-only">Status</h4>
+              <div aria-hidden="true" className="mt-6">
+                <div className="overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    style={{ width: `${percentComplete}%` }}
+                    className="h-2 rounded-full bg-indigo-600"
+                  />
+                </div>
+                <div
+                  className={`mt-6 hidden grid-cols-${currentUsersProgram[0].weeks.length} text-sm font-medium text-gray-600 sm:grid`}
+                >
+                  {currentUsersProgram[0].weeks.map((week, index) => (
+                    <div key={index} className="text-indigo-600">
+                      Week {week.weekNumber}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <p className="text-sm text-gray-500">
               Week{" "}
-              {currentUsersProgram ? currentUsersProgram[0].currentWeek : ""} of{" "}
-              {currentUsersProgram ? currentUsersProgram[0].weeks.length : ""}
+              {currentUsersProgram ? currentUsersProgram[0].currentWeek : ""}{" "}
+              Day {currentUsersProgram[0].currentDay}
             </p>
             <button
               className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

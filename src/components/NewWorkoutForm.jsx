@@ -2,9 +2,14 @@ import { useState, useCallback } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import { Dialog } from "@headlessui/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 
 const NewWorkoutForm = ({ isVisible, onClose, user }) => {
   const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
+  const navigate = useNavigate();
+
+  console.log(user);
 
   const getDateString = (date) => {
     const year = date.getFullYear();
@@ -19,6 +24,8 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
     clientId: user[0].clientId,
     startDate: getDateString(new Date()),
     programName: "New Workout Program",
+    currentWeek: 1,
+    completed: false,
     weeks: [
       {
         weekNumber: 1,
@@ -98,6 +105,30 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
     [setFormData]
   );
 
+  const deleteExercise = (weekIndex, dayIndex, exerciseIndex) => {
+    if (formData.weeks[weekIndex].days[dayIndex].exercises.length === 1) {
+      alert("Cannot delete the only exercise in a day.");
+      return;
+    }
+    updateWorkout((workout) => {
+      workout.weeks[weekIndex].days[dayIndex].exercises.splice(
+        exerciseIndex,
+        1
+      );
+    });
+  };
+
+  const deleteDay = (weekIndex, dayIndex) => {
+    const weekDayLength = formData.weeks[weekIndex].days.length;
+    if (weekDayLength === 1) {
+      alert("Cannot delete the only day in a week.");
+      return;
+    }
+    updateWorkout((workout) => {
+      workout.weeks[weekIndex].days.splice(dayIndex, 1);
+    });
+  };
+
   const addExercise = (weekIndex, dayIndex) => {
     updateWorkout((workout) => {
       const day = workout.weeks[weekIndex].days[dayIndex];
@@ -114,12 +145,22 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
   const handleSubmit = async () => {
     try {
       await axios.post(workoutApi, formData);
-
       alert("Workout created successfully!");
+      onClose();
     } catch (error) {
       onclose();
       alert("Failed to create workout.", error);
     }
+  };
+
+  const copyWeek = (weekIndex) => {
+    console.log(formData.weeks[weekIndex].days);
+    updateWorkout((workout) => {
+      workout.weeks.push({
+        weekNumber: workout.weeks.length + 1,
+        days: formData.weeks[weekIndex].days,
+      });
+    });
   };
 
   if (!isVisible) return null;
@@ -165,20 +206,26 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                     >
                       + Add Day
                     </button>
+                    <button
+                      onClick={() => copyWeek(weekIndex)}
+                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md text-sm"
+                    >
+                      Copy Week
+                    </button>
                   </div>
 
                   <ul
                     role="list"
-                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1"
                   >
                     {week.days.map((day, dayIndex) => (
                       <li
                         key={dayIndex}
-                        className="justify-center flex flex-col divide-y divide-gray-200 rounded-lg dark:bg-gray-800 text-center shadow"
+                        className="justify- flex flex-col divide-y divide-gray-200 rounded-lg dark:bg-gray-800 text-center shadow"
                       >
                         <div
                           key={dayIndex}
-                          className=" border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800"
+                          className=" border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 w-auto px-2 "
                         >
                           <div className="flex justify-between items-center">
                             <h3 className="text-md font-medium">
@@ -190,11 +237,25 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                             {day.exercises.map((exercise, exerciseIndex) => (
                               <div
                                 key={exerciseIndex}
-                                className="border border-gray-300 dark:border-gray-700  rounded-md space-y-2 bg-gray-50 dark:bg-gray-900 py-4 px-2"
+                                className="border mb-4 border-gray-300 dark:border-gray-700  rounded-md space-y-2 bg-gray-50 dark:bg-gray-900 py-4 px-2 w-52"
                               >
-                                <div className="flex flex-col items-center">
+                                <div className="flex flex-col items-center relative">
+                                  <TrashIcon
+                                    onClick={() =>
+                                      deleteExercise(weekIndex, dayIndex)
+                                    }
+                                    className="w-4 absolute -top-3 -right-2"
+                                  />
                                   <input
                                     type="text"
+                                    onChange={(e) =>
+                                      updateWorkout((workout) => {
+                                        workout.weeks[weekIndex].days[
+                                          dayIndex
+                                        ].exercises[exerciseIndex].name =
+                                          e.target.value;
+                                      })
+                                    }
                                     placeholder={exercise.name}
                                     className="text-center block w-26 border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                   />
@@ -206,6 +267,14 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                                     </label>
                                     <input
                                       type="number"
+                                      onChange={(e) =>
+                                        updateWorkout((workout) => {
+                                          workout.weeks[weekIndex].days[
+                                            dayIndex
+                                          ].exercises[exerciseIndex].sets =
+                                            e.target.value;
+                                        })
+                                      }
                                       placeholder={exercise.sets}
                                       className="text-center block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     />
@@ -216,6 +285,15 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                                     </label>
                                     <input
                                       type="number"
+                                      onChange={(e) =>
+                                        updateWorkout((workout) => {
+                                          workout.weeks[weekIndex].days[
+                                            dayIndex
+                                          ].exercises[
+                                            exerciseIndex
+                                          ].targetReps = e.target.value;
+                                        })
+                                      }
                                       placeholder={exercise.targetReps}
                                       className="text-center block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     />
@@ -226,6 +304,14 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                                     </label>
                                     <input
                                       type="number"
+                                      onChange={(e) =>
+                                        updateWorkout((workout) => {
+                                          workout.weeks[weekIndex].days[
+                                            dayIndex
+                                          ].exercises[exerciseIndex].weight =
+                                            e.target.value;
+                                        })
+                                      }
                                       placeholder={exercise.weight}
                                       className="text-center block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     />
@@ -236,12 +322,23 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                                     </label>
                                     <input
                                       type="number"
+                                      onChange={(e) =>
+                                        updateWorkout((workout) => {
+                                          workout.weeks[weekIndex].days[
+                                            dayIndex
+                                          ].exercises[exerciseIndex].rpe =
+                                            e.target.value;
+                                        })
+                                      }
                                       placeholder={exercise.rpe}
                                       className="text-center block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     />
                                   </div>
                                 </div>
-                                <button className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs">
+                                <button
+                                  onClick={() => deleteDay(weekIndex, dayIndex)}
+                                  className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs"
+                                >
                                   Delete Day
                                 </button>
                               </div>
@@ -275,7 +372,7 @@ const NewWorkoutForm = ({ isVisible, onClose, user }) => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => handleSubmit()}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                 >
                   Save Workout
