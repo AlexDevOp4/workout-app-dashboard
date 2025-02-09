@@ -11,29 +11,30 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Track loading state
+  const [error, setError] = useState(null);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true); // Start loading
+    setError(null); // Clear previous errors
     try {
-      const response = await axios.post(`${apiUrl}/signin`, {
+      const response = await axios.post(`http://localhost:3000/auth/signin`, {
         email,
         password,
       });
 
-      const firebaseUID = response.data.uid;
-
-      // Step 2: Fetch user data using Firebase UID
-      const userResponse = await axios.get(
-        `${userApiUrl}/firebase?firebaseUID=${firebaseUID}`
-      );
+      console.log(response.data.user);
 
       // Check the API response
       if (response.status && response.data) {
         console.log("Logged in successfully:", response.data);
-        setUser(userResponse.data); // Set user data
+        setUser(response.data.user); // Set user data
         login(); // Call your login handler
         navigate("/dashboard"); // Redirect to dashboard
       }
     } catch (error) {
+      setError("Invalid email or password"); // Show error
       // Improved error handling
       if (error.response) {
         console.error(
@@ -45,6 +46,8 @@ export default function SignIn() {
       } else {
         console.error("Error:", error.message);
       }
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -55,6 +58,8 @@ export default function SignIn() {
           <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
             Sign in to your account
           </h2>
+
+          {error && <p className="error-message">{error}</p>}
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
@@ -114,9 +119,10 @@ export default function SignIn() {
             <div>
               <button
                 type="submit"
+                disabled={loading}
                 className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
-                Sign in
+                {loading ? "Logging in..." : "Sign In"}
               </button>
             </div>
           </form>

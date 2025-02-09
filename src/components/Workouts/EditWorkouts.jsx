@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams,  useNavigate } from "react-router-dom";
-import {  ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
+import { useUserContext } from "../../UserContext";
 
 const EditWorkouts = () => {
   const { id } = useParams();
+  const { user } = useUserContext();
   const navigate = useNavigate();
   const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
+
+  console.log(user.firebaseUid);
 
   const [loading, setLoading] = useState(true);
   const [workout, setWorkout] = useState({
@@ -31,6 +35,22 @@ const EditWorkouts = () => {
       },
     ],
   });
+
+  const getVideos = async () => {
+    try {
+      const workouts = await axios.get(`http://localhost:3000/workouts/${id}`);
+
+      const response = await axios.get(
+        `http://localhost:3000/videos?userId=${workouts.data.clientId}`
+      );
+
+      console.log(response.data.videos);
+
+      return response.data;
+    } catch (error) {
+      return error;
+    }
+  };
 
   // Handle key down (Enter key detection)
   const handleKeyDown = async (
@@ -87,6 +107,7 @@ const EditWorkouts = () => {
   }, [workoutApi, id]);
 
   useEffect(() => {
+    getVideos();
     fetchWorkouts();
   }, [fetchWorkouts]);
 

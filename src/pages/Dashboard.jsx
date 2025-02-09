@@ -1,37 +1,24 @@
-import React, { useEffect, useState } from "react";
+
+import { Bar, Pie } from "react-chartjs-2";
+import { Chart as ChartJS, registerables } from "chart.js";
+import useSWR from "swr";
+
+ChartJS.register(...registerables);
 
 const Dashboard = () => {
   const userApiUrl = import.meta.env.VITE_USERS_API_URL;
   const workoutApi = import.meta.env.VITE_WORKOUTS_API_URL;
 
-  const [users, setUsers] = useState([]);
-  const [workouts, setWorkouts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const fetcher = (url) => fetch(url).then((res) => res.json());
 
-  // Fetch users and workouts
-  const fetchDashboardData = async () => {
-    try {
-      const [userResponse, workoutResponse] = await Promise.all([
-        fetch(userApiUrl),
-        fetch(`${workoutApi}/all-workouts`),
-      ]);
-      const usersData = await userResponse.json();
-      const workoutsData = await workoutResponse.json();
+  const { data: users, error: userError } = useSWR(userApiUrl, fetcher);
+  const { data: workouts, error: workoutError } = useSWR(
+    `${workoutApi}/all-workouts`,
+    fetcher
+  );
 
-      setUsers(usersData);
-      setWorkouts(workoutsData);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
+  // Show loading state while fetching data
+  if (!users || !workouts) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900">
         <div className="text-center">
@@ -41,6 +28,62 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  if (userError || workoutError) {
+    return <p className="text-red-500">Error loading data</p>;
+  }
+
+  // Data for charts
+  const userRolesData = {
+    labels: ["Trainers", "Clients"],
+    datasets: [
+      {
+        label: "Roles",
+        data: [
+          users.filter((user) => user.role === "trainer").length,
+          users.filter((user) => user.role === "client").length,
+        ],
+        backgroundColor: ["#6366F1", "#22D3EE"],
+      },
+    ],
+  };
+
+  const workoutStatusData = {
+    labels: ["Completed", "In Progress"],
+    datasets: [
+      {
+        label: "Workout Status",
+        data: [
+          workouts.filter((workout) => workout.completed).length,
+          workouts.filter((workout) => !workout.completed).length,
+        ],
+        backgroundColor: ["#10B981", "#F59E0B"],
+      },
+    ],
+  };
+
+  const workoutDistributionData = {
+    labels: workouts.map((workout) => workout.programName),
+    datasets: [
+      {
+        label: "Clients Per Workout Program",
+        data: workouts.map((workout) =>
+          workout.weeks.reduce(
+            (clientCount, week) =>
+              clientCount +
+              week.days.reduce(
+                (exerciseCount, day) => exerciseCount + day.exercises.length,
+                0
+              ),
+            0
+          )
+        ),
+        backgroundColor: workouts.map(
+          (_, i) => `hsl(${i * (360 / workouts.length)}, 70%, 50%)`
+        ),
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 p-6">
@@ -70,6 +113,22 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* Charts Section */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="p-6 bg-gray-800 rounded-lg shadow-lg">
+          <h2 className="text-lg font-bold mb-4">User Roles Distribution</h2>
+          <Pie data={userRolesData} />
+        </div>
+        <div className="p-6 bg-gray-800 rounded-lg shadow-lg">
+          <h2 className="text-lg font-bold mb-4">Workout Status</h2>
+          <Pie data={workoutStatusData} />
+        </div>
+        <div className="p-6 bg-gray-800 rounded-lg shadow-lg col-span-2">
+          <h2 className="text-lg font-bold mb-4">Workouts by Program</h2>
+          <Bar data={workoutDistributionData} options={{ responsive: true }} />
+        </div>
+      </section>
+
       {/* Users Section */}
       <section className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Users</h2>
@@ -85,36 +144,11 @@ const Dashboard = () => {
             <tbody>
               {users.map((user) => (
                 <tr key={user._id} className="border-b border-gray-700">
-                  <td className="p-2">{user.first_name} {user.last_name}</td>
+                  <td className="p-2">
+                    {user.first_name} {user.last_name}
+                  </td>
                   <td className="p-2">{user.email}</td>
                   <td className="p-2 capitalize">{user.role}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Workouts Section */}
-      <section>
-        <h2 className="text-2xl font-bold mb-4">Workouts</h2>
-        <div className="overflow-x-auto bg-gray-800 p-4 rounded-lg shadow-lg">
-          <table className="table-auto w-full">
-            <thead>
-              <tr className="text-left text-sm uppercase border-b border-gray-700">
-                <th className="p-2">Workout Name</th>
-                <th className="p-2">Clients</th>
-                <th className="p-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workouts.map((workout) => (
-                <tr key={workout._id} className="border-b border-gray-700">
-                  <td className="p-2">{workout.programName}</td>
-                  <td className="p-2">{workout.clients?.length || 0}</td>
-                  <td className="p-2 capitalize">
-                    {workout.completed ? "Completed" : "In Progress"}
-                  </td>
                 </tr>
               ))}
             </tbody>
